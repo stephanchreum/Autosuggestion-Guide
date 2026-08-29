@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+<html lang="da" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#020617">
+  <title>Émile Coué - Suggestionsøvelse App</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Firebase Compat SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore-compat.js"></script>
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#f0fdfa',
+              100: '#ccfbf1',
+              500: '#14b8a6',
+              600: '#0d9488',
+              800: '#115e59',
+              900: '#134e4a',
+              950: '#042f2e',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    @keyframes pulse-slow {
+      0%, 100% { transform: scale(1); opacity: 0.25; }
+      50% { transform: scale(1.15); opacity: 0.6; }
+    }
+    .animate-pulse-slow {
+      animation: pulse-slow 6s ease-in-out infinite;
+    }
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      height: 14px;
+      width: 14px;
+      border-radius: 50%;
+      background: #14b8a6;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col font-sans antialiased selection:bg-teal-500 selection:text-white pb-10">
+
+  <!-- App Header -->
+  <header class="border-b border-slate-800/80 bg-slate-900/90 backdrop-blur sticky top-0 z-50">
+    <div class="max-w-4xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center space-x-3">
+        <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-teal-600 to-teal-400 flex items-center justify-center text-slate-950 font-bold text-base shadow-md shadow-teal-900/20">
+          EC
+        </div>
+        <div>
+          <h1 class="font-bold text-slate-100 text-sm md:text-base leading-tight">Coué Suggestionsøvelse</h1>
+          <p class="text-[11px] text-teal-400">Interaktiv Guidet Session</p>
+        </div>
+      </div>
+
+      <!-- Mode Switcher Tabs -->
+      <nav class="flex bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs md:text-sm font-medium">
+        <button id="tab-learn" onclick="switchTab('learn')" class="px-3 py-1.5 md:px-3.5 md:py-1.5 rounded-lg transition-all text-teal-400 bg-slate-800 shadow-sm flex items-center gap-1.5">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
+          Lær Øvelsen
+        </button>
+        <button id="tab-practice" onclick="switchTab('practice')" class="px-3 py-1.5 md:px-3.5 md:py-1.5 rounded-lg transition-all text-slate-400 hover:text-slate-200 flex items-center gap-1.5">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+          Gennemfør Session
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Main Content Container -->
+  <main class="flex-1 max-w-4xl w-full mx-auto p-4 md:p-6 space-y-6">
+
+    <!-- TAB 1: LEARN MODE -->
+    <section id="view-learn" class="space-y-8">
+      <div class="bg-gradient-to-br from-slate-900 to-slate-900/60 border border-slate-800 rounded-2xl p-6 md:p-8 relative overflow-hidden">
+        <div class="max-w-2xl relative z-10 space-y-3">
+          <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-teal-500/10 text-teal-400 border border-teal-500/20">
+            Forberedelse & Instruktion
+          </span>
+          <h2 class="text-2xl md:text-3xl font-bold text-white tracking-tight">Hvordan udføres suggestionsøvelsen?</h2>
+          <p class="text-slate-300 leading-relaxed text-sm md:text-base">
+            Émile Coués suggestionsøvelse er designet til at indprente positive instrukser direkte i underbevidstheden. Det kræver ingen anstrengelse eller stærk viljestyrke – kun ro og modtagelighed.
+          </p>
+        </div>
+      </div>
+
+      <!-- Core Guidelines Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="bg-slate-900/90 border border-slate-800/80 rounded-xl p-5 hover:border-slate-700 transition-colors">
+          <div class="w-10 h-10 rounded-lg bg-teal-500/10 text-teal-400 flex items-center justify-center mb-3">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 100-6 3 3 0 000 6z"></path></svg>
+          </div>
+          <h3 class="font-semibold text-white text-base mb-1">1. Stemmeføring</h3>
+          <p class="text-slate-400 text-xs md:text-sm leading-relaxed">
+            Fremsig teksten med en **rolig, behagelig og monoton stemme**. Fremhæv nøgleord mildt.
+          </p>
+        </div>
+
+        <div class="bg-slate-900/90 border border-slate-800/80 rounded-xl p-5 hover:border-slate-700 transition-colors">
+          <div class="w-10 h-10 rounded-lg bg-teal-500/10 text-teal-400 flex items-center justify-center mb-3">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+          </div>
+          <h3 class="font-semibold text-white text-base mb-1">2. Stilling & Blik</h3>
+          <p class="text-slate-400 text-xs md:text-sm leading-relaxed">
+            Sid behageligt og **luk øjnene**. Dette forhindrer, at din opmærksomhed afspores af omgivelserne.
+          </p>
+        </div>
+
+        <div class="bg-slate-900/90 border border-slate-800/80 rounded-xl p-5 hover:border-slate-700 transition-colors">
+          <div class="w-10 h-10 rounded-lg bg-teal-500/10 text-teal-400 flex items-center justify-center mb-3">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+          </div>
+          <h3 class="font-semibold text-white text-base mb-1">3. Uden anstrengelse</h3>
+          <p class="text-slate-400 text-xs md:text-sm leading-relaxed">
+            Gør det naturligt og ubesværet. Tving ikke tankerne med viljen.
+          </p>
+        </div>
+      </div>
+
+      <div class="space-y-4">
+        <h3 class="text-lg font-semibold text-white flex items-center gap-2">
+          <span>De vigtigste trin i manuskriptet</span>
+          <span class="text-xs font-normal text-slate-400">(Klik for at læse)</span>
+        </h3>
+        <div class="space-y-2" id="steps-container"></div>
+      </div>
+
+      <div class="bg-teal-950/40 border border-teal-800/50 rounded-xl p-6 text-center space-y-3">
+        <h4 class="text-lg font-semibold text-teal-200">Klar til at gennemføre øvelsen?</h4>
+        <p class="text-slate-300 text-sm max-w-lg mx-auto">
+          Brug vores afspiller med indbygget AI-stemme eller importer din egen samlede Master WAV-fil.
+        </p>
+        <button onclick="switchTab('practice')" class="inline-flex items-center gap-2 px-6 py-3 bg-teal-600 hover:bg-teal-500 text-white font-medium rounded-xl shadow-lg transition-all">
+          Start Guidet Session
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+        </button>
+      </div>
+    </section>
+
+    <!-- TAB 2: PRACTICE / SESSION MODE -->
+    <section id="view-practice" class="hidden space-y-6">
+      
+      <!-- Top Card Header -->
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-3 shadow-xl">
+        <div class="flex items-center space-x-3">
+          <span id="step-badge" class="px-3 py-1 rounded-full text-xs font-semibold bg-teal-500/20 text-teal-300 border border-teal-500/30">
+            Trin 1
+          </span>
+          <h3 id="step-title-display" class="font-medium text-slate-200 text-sm md:text-base">
+            Indledning & Modtagelighed
+          </h3>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <button id="btn-sync" onclick="toggleSyncSlides()" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium flex items-center gap-1 border border-slate-700">
+            <span id="sync-btn-text">Følg Lyd med Tekst: Til</span>
+          </button>
+          
+          <div class="flex items-center bg-slate-950 rounded-xl p-1 border border-slate-800">
+            <button onclick="adjustFontSize(-1)" class="w-7 h-7 flex items-center justify-center text-slate-400 hover:text-white font-bold text-xs">A-</button>
+            <button onclick="adjustFontSize(1)" class="w-7 h-7 flex items-center justify-center text-slate-400 hover:text-white font-bold text-sm">A+</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main Teleprompter Display Card -->
+      <div class="relative bg-slate-900/90 border border-slate-800 rounded-3xl p-6 md:p-10 shadow-2xl min-h-[380px] flex flex-col justify-between overflow-hidden">
+        <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <div class="w-72 h-72 bg-teal-600/10 rounded-full blur-3xl animate-pulse-slow"></div>
+        </div>
+
+        <div class="relative z-10 space-y-4 my-auto">
+          <p id="script-instruction" class="text-xs uppercase tracking-wider text-teal-400 font-semibold mb-1"></p>
+          <div id="script-text-body" class="text-slate-100 font-serif leading-relaxed text-lg md:text-2xl space-y-4 transition-all duration-300"></div>
+        </div>
+
+        <div class="relative z-10 mt-6 pt-4 border-t border-slate-800/80 flex flex-col space-y-3">
+          <div class="w-full bg-slate-800 h-1 rounded-full overflow-hidden">
+            <div id="session-progress" class="bg-teal-500 h-full w-0 transition-all duration-300"></div>
+          </div>
+
+          <div class="flex items-center justify-between">
+            <button id="btn-prev" onclick="navigateStep(-1)" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed text-slate-200 text-xs font-medium flex items-center gap-1.5">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+              Forrige Kort
+            </button>
+
+            <span id="step-counter" class="text-xs text-slate-500 font-mono">1 / 11</span>
+
+            <button id="btn-next" onclick="navigateStep(1)" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium flex items-center gap-1.5">
+              Næste Kort
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- AUDIO PLAYER PANEL WITH ONE-CLICK LOCAL WAV IMPORT -->
+      <div class="bg-slate-900 border border-teal-500/30 rounded-2xl p-4 shadow-2xl space-y-3 bg-gradient-to-r from-slate-900 via-slate-900 to-teal-950/30">
+        
+        <div class="flex items-center justify-between">
+          <div class="flex items-center space-x-2">
+            <span id="audio-ping-dot" class="w-2 h-2 rounded-full bg-teal-400"></span>
+            <span id="player-audio-status" class="text-xs font-semibold text-teal-300 uppercase tracking-wider">Klar til afspilning</span>
+          </div>
+          <span id="player-time-display" class="text-xs font-mono text-slate-400">00:00 / 00:00</span>
+        </div>
+
+        <div class="flex items-center space-x-3">
+          <input type="range" id="audio-seek-bar" min="0" max="100" value="0" oninput="onSeekInput(this.value)" class="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-teal-500">
+        </div>
+
+        <!-- Main Controls -->
+        <div class="flex items-center justify-between gap-1 sm:gap-2 pt-1 w-full max-w-full overflow-hidden">
+          <button onclick="skipAudioSection(-1)" title="Forrige afsnit" class="p-2 sm:p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors shrink-0">
+            <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
+          </button>
+
+          <button onclick="seekAudioRelative(-10)" title="Spol 10 sek. tilbage" class="px-2 py-2 sm:px-3 sm:py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center gap-0.5 sm:gap-1 text-[11px] sm:text-xs font-mono font-medium transition-colors shrink-0">
+            <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12.066 11.2a1 1 0 000 1.6l5.334 4A1 1 0 0019 16V8a1 1 0 00-1.6-.8l-5.334 4zM4.066 11.2a1 1 0 000 1.6l5.334 4A1 1 0 0011 16V8a1 1 0 00-1.6-.8l-5.334 4z"/></svg>
+            -10s
+          </button>
+
+          <button id="btn-master-play" onclick="toggleMasterPlay()" class="px-2.5 py-2.5 sm:px-5 sm:py-3 rounded-2xl bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 shadow-lg shadow-teal-500/20 transition-all transform active:scale-95 flex-1 min-w-0">
+            <svg id="play-icon-svg" class="w-4 h-4 sm:w-5 sm:h-5 shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+            <span id="play-btn-label" class="truncate">Afspil AI-Stemme</span>
+          </button>
+
+          <button onclick="seekAudioRelative(10)" title="Spol 10 sek. frem" class="px-2 py-2 sm:px-3 sm:py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center gap-0.5 sm:gap-1 text-[11px] sm:text-xs font-mono font-medium transition-colors shrink-0">
+            +10s
+            <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.934 12.8a1 1 0 000-1.6l-5.334-4A1 1 0 0013 8v8a1 1 0 001.6.8l5.334-4zM19.934 12.8a1 1 0 000-1.6l-5.334-4A1 1 0 0013 8v8a1 1 0 001.6.8l5.334-4z"/></svg>
+          </button>
+
+          <button onclick="skipAudioSection(1)" title="Næste afsnit" class="p-2 sm:p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors shrink-0">
+            <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>
+          </button>
+        </div>
+
+        <!-- LOCAL WAV FILE IMPORT BAR -->
+        <div class="pt-2 border-t border-slate-800/80 flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-400">
+          <span id="storage-status-text" class="flex items-center gap-1">
+            <svg class="w-3.5 h-3.5 text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+            AI-stemme klar til afspilning
+          </span>
+
+          <div class="flex items-center gap-2">
+            <input type="file" id="local-wav-file-input" accept="audio/wav,audio/x-wav,audio/mp3" class="hidden" onchange="handleManualWavUpload(event)">
+            <button onclick="document.getElementById('local-wav-file-input').click()" class="px-3 py-1.5 bg-teal-600/20 hover:bg-teal-600/30 text-teal-300 rounded-lg border border-teal-500/40 transition-all font-semibold flex items-center gap-1.5 shadow-sm">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+              <span>📂 Importer Master WAV fra Telefonen</span>
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+    </section>
+
+    <!-- Footer -->
+    <footer class="mt-8 pt-4 border-t border-slate-800/60 text-center text-xs text-slate-500 space-y-2">
+      <p>Émile Coué Suggestionsøvelse &bull; Mobil App Guide</p>
+    </footer>
+
+  </main>
+
+  <script>
+    // Mandatory runtime API key declaration
+    const apiKey = "";
+
+    // Web Audio API State
+    let audioCtx = null;
+    let currentSourceNode = null;
+    let fullAudioBuffer = null;
+    let audioStartTime = 0;
+    let audioStartOffset = 0;
+    let audioProgressTimer = null;
+    let isFetchingAudio = false;
+
+    let sectionBookmarks = [];
+
+    // --- DATA: De 5 Læringstrin ---
+    const learnSteps = [
+      { num: "01", title: "Modtagelighed", summary: "Sæt dig behageligt og luk øjnene.", detail: "Tillad ordene at indprente sig ubevidst i sindet uden anstrengelse." },
+      { num: "02", title: "Fordøjelse & Vitalitet", summary: "Sultfornemmelse og smertefri fordøjelse.", detail: "Organismen instrueres i at nyde maden og optage livskraft uforstyrret." },
+      { num: "03", title: "Søvn & Humør", summary: "Dyb søvn og ophør af tungsind.", detail: "Søvnen bliver fredfyldt, og humøret bliver naturligt opstemt og glad." },
+      { num: "04", title: "Helbredelse", summary: "Organer i perfekt harmoni.", detail: "Underbevidstheden genopretter balancen i kroppens biologiske funktioner." },
+      { num: "05", title: "Selvtillid", summary: "Erstat 'umuligt' med 'jeg kan'.", detail: "Troen på egne evner styrkes gennem visheden om den indre kraft." }
+    ];
+
+    // --- DATA: 11-Trins Manuskriptet ---
+    const scriptSections = [
+      {
+        title: "Indledning & Modtagelighed",
+        instruction: "Luk øjnene og fald til ro.",
+        text: [
+          "Sæt dig ned og luk øjnene. Jeg vil ikke forsøge at få dig til at sove, da det er helt unødvendigt. Jeg beder dig blot om at lukke øjnene, for at din opmærksomhed ikke skal blive afsporet af genstandene omkring dig.",
+          "Sig nu til dig selv, at hvert ord, jeg siger, vil fæstne sig i dit sind, blive trykt, indgraveret og indstøbt i det, og at du selv og hele din organisme – helt ubevidst – vil adlyde."
+        ]
+      },
+      {
+        title: "Næring, Sult & Fordøjelse",
+        instruction: "Fokusér på kroppens naturlige appetit.",
+        text: [
+          "Hver dag, tre gange om dagen – om morgenen, til middag og om aftenen – vil du føle dig sulten. Du vil opleve den behagelige fornemmelse, som får dig til at tænke: »Åh! Hvor bliver det dejligt at få noget at spise!«",
+          "Du vil derefter spise og nyde din mad, naturligt uden at overspise. Du vil tygge den ordentligt, så du fordøjer den korrekt og derfor ikke føler ubehag eller smerter. Din organisme vil udnytte maden til at danne styrke og energi – med ét ord: **Liv**."
+        ]
+      },
+      {
+        title: "Naturlig Udskillelse",
+        instruction: "Fokusér på kroppens ubesværede rytme.",
+        text: [
+          "Da du har fordøjet din mad ordentligt, vil udskillelsesfunktionen være normal. Hver morgen, når du står op, vil du føle trang til at tømme tarmene, og uden medicin vil du opnå et normalt og tilfredsstillende resultat."
+        ]
+      },
+      {
+        title: "Dyb Søvn & Vitalitet",
+        instruction: "Mærk roen brede sig.",
+        text: [
+          "Hver nat, fra det øjeblik du ønsker at falde i søvn, til du ønsker at vågne, vil du sove dybt, roligt og fredfyldt uden mareridt. Når du vågner, vil du føle dig fuldstændig rask, opstemt og aktiv."
+        ]
+      },
+      {
+        title: "Følelsesmæssig Balance & Humør",
+        instruction: "Slip bekymringerne.",
+        text: [
+          "Hvis du lejlighedsvis lider af nedtrykthed eller bekymring, vil du fra nu af holde op med det. I stedet vil du føle dig fuldstændig glad og opstemt – selv hvis du skulle have en reel grund til bekymring, vil du forblive rolig."
+        ]
+      },
+      {
+        title: "Tålmodighed & Indre Ro",
+        instruction: "Du er herre over dig selv.",
+        text: [
+          "Du vil altid være tålmodig og herre over dig selv. De ting, der før bekymrede eller irriterede dig, vil fremover lade dig fuldstændig urørt og efterlade dig helt rolig."
+        ]
+      },
+      {
+        title: "Tanker som Svinder Bort",
+        instruction: "Lad alt det usunde smelte bort.",
+        text: [
+          "Dårlige og usunde tanker, frygt eller nag vil gradvist smelte bort som i en fjern sky og til sidst forsvinde helt. Ligesom en drøm svinder bort, når vi vågner, således vil alle disse golde billeder forsvinde."
+        ]
+      },
+      {
+        title: "Kroppens Organer & Helbredelse",
+        instruction: "Harmoni i hele kroppen.",
+        text: [
+          "Alle dine organer udfører deres funktioner korrekt. Hjertet slår normalt, blodcirkulationen foregår som den skal, og lunger, mave og nyrer udfører deres opgaver perfekt. Enhver unormalitet forsvinder helt, og organerne genvinder deres naturlige funktion."
+        ]
+      },
+      {
+        title: "Selvtillid & »Jeg Kan«",
+        instruction: "Troen på din indre kraft.",
+        text: [
+          "Enhver mistillid til dig selv vil forsvinde og give plads til selvtillid baseret på kraften i dit indre. Når du ønsker at gøre noget rimeligt, så tænk altid, at det er let. Glem ord som 'svært' eller 'umuligt'.",
+          "Dit nye princip er: **»Det er let, og jeg kan«**. Ved at betragte tingen som let, bliver den det!"
+        ]
+      },
+      {
+        title: "Afslutning & Opvågning",
+        instruction: "Vend tilbage til nuet.",
+        text: [
+          "Nu tæller jeg til tre. Ved 'Tre' åbner du øjnene og træder ud af den passive tilstand. Du vil træde ud af den helt naturally uden at føle dig det mindste træt; tværtimod vil du føle dig stærk, aktiv og fuld af liv.",
+          "**EN... TO... TRE!**"
+        ]
+      },
+      {
+        title: "Din Daglige Huskeremse",
+        instruction: "En gave til dig selv fremover.",
+        text: [
+          "Fremover, for at understøtte den positive udvikling, skal du blot dagligt sige følgende ord til dig selv:",
+          "**»Hver dag og på alle måder får jeg det bedre og bedre.«**",
+          "Din underbevidsthed vil således virke der, hvor du har brug for det."
+        ]
+      }
+    ];
+
+    function getFullScriptText() {
+      return scriptSections.map(s => {
+        return s.text.join(" ")
+          .replace(/[\*\#»«"']/g, '')
+          .replace(/:/g, ', ')
+          .trim();
+      }).join("\n\n");
+    }
+
+    function calculateBookmarks(totalDuration) {
+      const lengths = scriptSections.map(s => s.text.join(" ").length);
+      const totalLength = lengths.reduce((a, b) => a + b, 0);
+      let currentSec = 0;
+      sectionBookmarks = lengths.map((len) => {
+        const startTime = currentSec;
+        const durationFraction = (len / totalLength) * totalDuration;
+        currentSec += durationFraction;
+        return startTime;
+      });
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      renderLearnSteps();
+      updateSessionUI();
+      fetchFullExerciseAudio();
+    });
+
+    function switchTab(tab) {
+      const learnView = document.getElementById('view-learn');
+      const practiceView = document.getElementById('view-practice');
+      const tabLearn = document.getElementById('tab-learn');
+      const tabPractice = document.getElementById('tab-practice');
+
+      if (tab === 'learn') {
+        learnView.classList.remove('hidden');
+        practiceView.classList.add('hidden');
+        tabLearn.className = "px-3.5 py-1.5 rounded-lg transition-all text-teal-400 bg-slate-800 shadow-sm flex items-center gap-1.5";
+        tabPractice.className = "px-3.5 py-1.5 rounded-lg transition-all text-slate-400 hover:text-slate-200 flex items-center gap-1.5";
+      } else {
+        learnView.classList.add('hidden');
+        practiceView.classList.remove('hidden');
+        tabPractice.className = "px-3.5 py-1.5 rounded-lg transition-all text-teal-400 bg-slate-800 shadow-sm flex items-center gap-1.5";
+        tabLearn.className = "px-3.5 py-1.5 rounded-lg transition-all text-slate-400 hover:text-slate-200 flex items-center gap-1.5";
+        updateSessionUI();
+      }
+    }
+
+    function renderLearnSteps() {
+      const container = document.getElementById('steps-container');
+      container.innerHTML = learnSteps.map((step, idx) => `
+        <div class="bg-slate-900 border border-slate-800/80 rounded-xl overflow-hidden transition-all">
+          <button onclick="toggleStepDetail(${idx})" class="w-full p-4 text-left flex items-center justify-between gap-4 hover:bg-slate-800/40">
+            <div class="flex items-center space-x-3">
+              <span class="font-mono text-xs font-bold text-teal-400 bg-teal-500/10 px-2 py-1 rounded border border-teal-500/20">${step.num}</span>
+              <span class="font-medium text-slate-100 text-sm md:text-base">${step.title}</span>
+            </div>
+            <svg id="arrow-${idx}" class="w-4 h-4 text-slate-400 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+          </button>
+          <div id="detail-${idx}" class="hidden px-4 pb-4 pt-1 text-slate-300 text-xs md:text-sm border-t border-slate-800/40 space-y-2 bg-slate-950/40">
+            <p class="font-medium text-teal-200">${step.summary}</p>
+            <p class="text-slate-400 leading-relaxed">${step.detail}</p>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function toggleStepDetail(idx) {
+      const detail = document.getElementById(`detail-${idx}`);
+      const arrow = document.getElementById(`arrow-${idx}`);
+      const isHidden = detail.classList.contains('hidden');
+      detail.classList.toggle('hidden');
+      arrow.style.transform = isHidden ? 'rotate(180deg)' : 'rotate(0deg)';
+    }
+
+    function updateSessionUI() {
+      const step = scriptSections[currentStepIndex];
+      const totalSteps = scriptSections.length;
+
+      document.getElementById('step-badge').innerText = `Trin ${currentStepIndex + 1} af ${totalSteps}`;
+      document.getElementById('step-title-display').innerText = step.title;
+      document.getElementById('step-counter').innerText = `${currentStepIndex + 1} / ${totalSteps}`;
+      document.getElementById('script-instruction').innerText = step.instruction;
+
+      const bodyContainer = document.getElementById('script-text-body');
+      bodyContainer.innerHTML = step.text.map(p => `<p class="leading-relaxed">${p.replace(/\*\*(.*?)\*\*/g, '<strong class="text-teal-300 font-semibold">$1</strong>')}</p>`).join('');
+
+      const progressPercent = ((currentStepIndex + 1) / totalSteps) * 100;
+      document.getElementById('session-progress').style.width = `${progressPercent}%`;
+
+      document.getElementById('btn-prev').disabled = currentStepIndex === 0;
+      const nextBtn = document.getElementById('btn-next');
+      nextBtn.innerHTML = currentStepIndex === totalSteps - 1 ? 'Afslut Session' : 'Næste Kort';
+    }
+
+    function navigateStep(direction) {
+      const totalSteps = scriptSections.length;
+      currentStepIndex += direction;
+
+      if (currentStepIndex < 0) currentStepIndex = 0;
+      if (currentStepIndex >= totalSteps) {
+        currentStepIndex = totalSteps - 1;
+      }
+
+      updateSessionUI();
+
+      if (sectionBookmarks[currentStepIndex] !== undefined && fullAudioBuffer) {
+        seekToTime(sectionBookmarks[currentStepIndex]);
+      }
+    }
+
+    function adjustFontSize(delta) {
+      fontSizeLevel = Math.max(0, Math.min(3, fontSizeLevel + delta));
+      const sizes = ['text-base', 'text-lg', 'text-xl', 'text-2xl'];
+      document.getElementById('script-text-body').className = `text-slate-100 font-serif leading-relaxed space-y-4 transition-all duration-300 ${sizes[fontSizeLevel]}`;
+    }
+
+    function toggleSyncSlides() {
+      autoSyncSlides = !autoSyncSlides;
+      document.getElementById('sync-btn-text').innerText = `Følg Lyd med Tekst: ${autoSyncSlides ? 'Til' : 'Fra'}`;
+    }
+
+    // =================================================================
+    // INSTANT LOCAL FILE IMPORT (FROM IPHONE FILES APP / MAC)
+    // =================================================================
+
+    async function handleManualWavUpload(event) {
+      const files = event.target.files;
+      if (!files || files.length === 0) return;
+
+      const ctx = getAudioContext();
+      setAudioStatus("Indlæser lokal Master WAV-fil...", "amber");
+
+      try {
+        const file = files[0];
+        const arrayBuffer = await file.arrayBuffer();
+        const decodedBuffer = await ctx.decodeAudioData(arrayBuffer);
+
+        fullAudioBuffer = decodedBuffer;
+        calculateBookmarks(fullAudioBuffer.duration);
+
+        setAudioStatus(`Master-lyd indlæst: ${file.name}`, "teal");
+        updateStorageStatusText(`📁 Bruger lokal Master-fil: ${file.name} (${fullAudioBuffer.duration.toFixed(1)}s)`);
+        
+        audioStartOffset = 0;
+        startBufferPlayback(fullAudioBuffer, 0);
+      } catch (err) {
+        setAudioStatus("Kunne ikke afkode lydfilen - Vælg en gyldig WAV", "red");
+      }
+    }
+
+    function getAudioContext() {
+      if (!audioCtx) {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if (AudioContextClass) {
+          audioCtx = new AudioContextClass();
+        }
+      }
+      if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+      return audioCtx;
+    }
+
+    async function fetchFullExerciseAudio() {
+      if (fullAudioBuffer) return fullAudioBuffer;
+      if (isFetchingAudio) return null;
+
+      isFetchingAudio = true;
+      setAudioStatus("Forbereder AI-stemme...", "amber");
+
+      const cleanText = getFullScriptText();
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${apiKey}`;
+
+      const payload = {
+        contents: [{
+          parts: [{
+            text: `Læs denne samlede danske hypnose- og meditationstekst op med en rolig, behagelig og monoton stemme:\n\n${cleanText}`
+          }]
+        }],
+        generationConfig: {
+          responseModalities: ["AUDIO"],
+          speechConfig: {
+            voiceConfig: {
+              prebuiltVoiceConfig: {
+                voiceName: "Aoede"
+              }
+            }
+          }
+        },
+        model: "gemini-2.5-flash-preview-tts"
+      };
+
+      const delays = [1000, 2000, 4000, 8000, 16000];
+      let response = null;
+
+      for (let attempt = 0; attempt <= delays.length; attempt++) {
+        try {
+          response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          if (response.ok) break;
+        } catch(e) {}
+        if (attempt < delays.length) {
+          await new Promise(res => setTimeout(res, delays[attempt]));
+        }
+      }
+
+      isFetchingAudio = false;
+
+      if (!response || !response.ok) {
+        setAudioStatus("Klar (eller importer Master WAV)", "teal");
+        return null;
+      }
+
+      try {
+        const result = await response.json();
+        const candidatePart = result.candidates?.[0]?.content?.parts?.find(p => p.inlineData);
+        const inlineData = candidatePart?.inlineData;
+        if (!inlineData || !inlineData.data) {
+          return null;
+        }
+
+        let sampleRate = 24000;
+        if (inlineData.mimeType) {
+          const match = inlineData.mimeType.match(/rate=(\d+)/);
+          if (match) sampleRate = parseInt(match[1], 10);
+        }
+
+        const ctx = getAudioContext();
+        fullAudioBuffer = pcm16ToAudioBuffer(inlineData.data, sampleRate, ctx);
+        calculateBookmarks(fullAudioBuffer.duration);
+        setAudioStatus("AI-stemme klar til afspilning", "teal");
+        return fullAudioBuffer;
+      } catch(e) {
+        return null;
+      }
+    }
+
+    async function toggleMasterPlay() {
+      const ctx = getAudioContext();
+
+      if (isPlayingAudio) {
+        pauseAudio();
+      } else {
+        if (!fullAudioBuffer) {
+          const buffer = await fetchFullExerciseAudio();
+          if (buffer) {
+            startBufferPlayback(buffer, audioStartOffset);
+          }
+        } else {
+          if (audioStartOffset >= fullAudioBuffer.duration - 0.5) {
+            audioStartOffset = 0;
+          }
+          startBufferPlayback(fullAudioBuffer, audioStartOffset);
+        }
+      }
+    }
+
+    function startBufferPlayback(buffer, offset = 0) {
+      const ctx = getAudioContext();
+      if (!ctx || !buffer) return;
+
+      if (currentSourceNode) {
+        try {
+          currentSourceNode.onended = null;
+          currentSourceNode.stop();
+        } catch(e) {}
+      }
+
+      currentSourceNode = ctx.createBufferSource();
+      currentSourceNode.buffer = buffer;
+      currentSourceNode.connect(ctx.destination);
+
+      audioStartTime = ctx.currentTime;
+      audioStartOffset = offset;
+      isPlayingAudio = true;
+
+      currentSourceNode.onended = () => {
+        const elapsed = (ctx.currentTime - audioStartTime) + audioStartOffset;
+        if (elapsed >= buffer.duration - 0.3) {
+          isPlayingAudio = false;
+          stopProgressLoop();
+          updatePlayerUI();
+          setAudioStatus("Øvelse Afsluttet", "teal");
+        }
+      };
+
+      currentSourceNode.start(0, offset);
+      setAudioStatus("Spiller Master-lyd", "teal");
+      updatePlayerUI();
+      startProgressLoop();
+    }
+
+    function pauseAudio() {
+      if (currentSourceNode) {
+        try {
+          currentSourceNode.onended = null;
+          currentSourceNode.stop();
+        } catch(e) {}
+      }
+      if (audioCtx) {
+        audioStartOffset += (audioCtx.currentTime - audioStartTime);
+      }
+      isPlayingAudio = false;
+      stopProgressLoop();
+      updatePlayerUI();
+      setAudioStatus("Pauset", "slate");
+    }
+
+    function seekToTime(targetTime) {
+      if (!fullAudioBuffer) return;
+      const clampedTime = Math.max(0, Math.min(fullAudioBuffer.duration, targetTime));
+      audioStartOffset = clampedTime;
+
+      if (isPlayingAudio) {
+        startBufferPlayback(fullAudioBuffer, clampedTime);
+      } else {
+        updateProgressDisplay(clampedTime, fullAudioBuffer.duration);
+      }
+    }
+
+    function setAudioStatus(message, color) {
+      const statusElem = document.getElementById('player-audio-status');
+      const dotElem = document.getElementById('audio-ping-dot');
+
+      if (statusElem) statusElem.innerText = message;
+      if (dotElem) {
+        if (color === 'teal') dotElem.className = "w-2 h-2 rounded-full bg-teal-400 animate-ping";
+        else if (color === 'amber') dotElem.className = "w-2 h-2 rounded-full bg-amber-400 animate-pulse";
+        else if (color === 'red') dotElem.className = "w-2 h-2 rounded-full bg-red-400";
+        else dotElem.className = "w-2 h-2 rounded-full bg-slate-500";
+      }
+    }
+
+    function updateStorageStatusText(msg) {
+      const elem = document.getElementById('storage-status-text');
+      if (elem) elem.innerHTML = msg;
+    }
+
+    function pcm16ToAudioBuffer(base64Pcm, sampleRate, ctx) {
+      const binaryString = atob(base64Pcm);
+      const len = binaryString.length;
+      const bytes = new Uint8Array(len);
+      for (let i = 0; i < len; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+      }
+      const pcm16 = new Int16Array(bytes.buffer, bytes.byteOffset, Math.floor(bytes.byteLength / 2));
+      const buffer = ctx.createBuffer(1, pcm16.length, sampleRate);
+      const channelData = buffer.getChannelData(0);
+      for (let i = 0; i < pcm16.length; i++) {
+        channelData[i] = pcm16[i] / 32768.0;
+      }
+      return buffer;
+    }
+
+    function seekAudioRelative(seconds) {
+      if (!fullAudioBuffer) return;
+      const ctx = getAudioContext();
+      let currentPos = audioStartOffset;
+      if (isPlayingAudio && ctx) {
+        currentPos += (ctx.currentTime - audioStartTime);
+      }
+      seekToTime(currentPos + seconds);
+    }
+
+    function onSeekInput(pctValue) {
+      if (!fullAudioBuffer) return;
+      const newPos = (pctValue / 100) * fullAudioBuffer.duration;
+      seekToTime(newPos);
+    }
+
+    function skipAudioSection(direction) {
+      let targetIdx = currentStepIndex + direction;
+      targetIdx = Math.max(0, Math.min(scriptSections.length - 1, targetIdx));
+      currentStepIndex = targetIdx;
+      updateSessionUI();
+
+      if (sectionBookmarks[targetIdx] !== undefined && fullAudioBuffer) {
+        seekToTime(sectionBookmarks[targetIdx]);
+      }
+    }
+
+    function startProgressLoop() {
+      stopProgressLoop();
+      audioProgressTimer = setInterval(() => {
+        if (!isPlayingAudio || !audioCtx || !fullAudioBuffer) return;
+        const elapsed = (audioCtx.currentTime - audioStartTime) + audioStartOffset;
+        const dur = fullAudioBuffer.duration;
+        
+        updateProgressDisplay(elapsed, dur);
+
+        if (autoSyncSlides && sectionBookmarks.length === scriptSections.length) {
+          let matchedIndex = 0;
+          for (let i = 0; i < sectionBookmarks.length; i++) {
+            if (elapsed >= sectionBookmarks[i] - 0.5) {
+              matchedIndex = i;
+            }
+          }
+          if (matchedIndex !== currentStepIndex) {
+            currentStepIndex = matchedIndex;
+            updateSessionUI();
+          }
+        }
+      }, 200);
+    }
+
+    function stopProgressLoop() {
+      if (audioProgressTimer) clearInterval(audioProgressTimer);
+      audioProgressTimer = null;
+    }
+
+    function updateProgressDisplay(elapsed, duration) {
+      const clampedElapsed = Math.max(0, Math.min(duration, elapsed));
+      const pct = duration > 0 ? (clampedElapsed / duration) * 100 : 0;
+      const seekElem = document.getElementById('audio-seek-bar');
+      if (seekElem) seekElem.value = pct;
+
+      const timeElem = document.getElementById('player-time-display');
+      if (timeElem) timeElem.innerText = `${formatTime(clampedElapsed)} / ${formatTime(duration)}`;
+    }
+
+    function updatePlayerUI() {
+      const playBtnLabel = document.getElementById('play-btn-label');
+      const playIconSvg = document.getElementById('play-icon-svg');
+
+      if (isPlayingAudio) {
+        playBtnLabel.innerText = "Pausér";
+        playIconSvg.innerHTML = `<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>`;
+      } else {
+        playBtnLabel.innerText = "Afspil Master-Lyd";
+        playIconSvg.innerHTML = `<path d="M8 5v14l11-7z"/>`;
+      }
+    }
+  </script>
+</body>
+</html>
