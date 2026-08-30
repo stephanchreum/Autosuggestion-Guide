@@ -133,7 +133,7 @@
 
       <div class="space-y-4">
         <h3 class="text-lg font-semibold text-white flex items-center gap-2">
-          <span>De vigtigste trin i manuskriptet</span>
+          <span>De 11 trin i manuskriptet</span>
           <span class="text-xs font-normal text-slate-400">(Klik for at læse)</span>
         </h3>
         <div class="space-y-2" id="steps-container"></div>
@@ -210,7 +210,7 @@
 
       </div>
 
-      <!-- AUDIO PLAYER PANEL WITH ONE-CLICK LOCAL WAV IMPORT -->
+      <!-- AUDIO PLAYER PANEL -->
       <div class="bg-slate-900 border border-teal-500/30 rounded-2xl p-4 shadow-2xl space-y-3 bg-gradient-to-r from-slate-900 via-slate-900 to-teal-950/30">
         
         <div class="flex items-center justify-between">
@@ -279,10 +279,8 @@
   </main>
 
   <script>
-    // Mandatory runtime API key declaration
     const apiKey = "";
 
-    // Web Audio API State
     let audioCtx = null;
     let currentSourceNode = null;
     let fullAudioBuffer = null;
@@ -290,10 +288,12 @@
     let audioStartOffset = 0;
     let audioProgressTimer = null;
     let isFetchingAudio = false;
-
+    let currentStepIndex = 0;
+    let autoSyncSlides = true;
+    let fontSizeLevel = 0;
+    let isPlayingAudio = false;
     let sectionBookmarks = [];
 
-    // --- DATA: De 5 Læringstrin ---
     const learnSteps = [
       { num: "01", title: "Modtagelighed", summary: "Sæt dig behageligt og luk øjnene.", detail: "Tillad ordene at indprente sig ubevidst i sindet uden anstrengelse." },
       { num: "02", title: "Fordøjelse & Vitalitet", summary: "Sultfornemmelse og smertefri fordøjelse.", detail: "Organismen instrueres i at nyde maden og optage livskraft uforstyrret." },
@@ -302,10 +302,9 @@
       { num: "05", title: "Selvtillid", summary: "Erstat 'umuligt' med 'jeg kan'.", detail: "Troen på egne evner styrkes gennem visheden om den indre kraft." }
     ];
 
-    // --- DATA: 11-Trins Manuskriptet ---
     const scriptSections = [
       {
-        title: "Indledning & Modtagelighed",
+        title: "1. Indledning & Modtagelighed",
         instruction: "Luk øjnene og fald til ro.",
         text: [
           "Sæt dig ned og luk øjnene. Jeg vil ikke forsøge at få dig til at sove, da det er helt unødvendigt. Jeg beder dig blot om at lukke øjnene, for at din opmærksomhed ikke skal blive afsporet af genstandene omkring dig.",
@@ -313,7 +312,7 @@
         ]
       },
       {
-        title: "Næring, Sult & Fordøjelse",
+        title: "2. Næring, Sult & Fordøjelse",
         instruction: "Fokusér på kroppens naturlige appetit.",
         text: [
           "Hver dag, tre gange om dagen – om morgenen, til middag og om aftenen – vil du føle dig sulten. Du vil opleve den behagelige fornemmelse, som får dig til at tænke: »Åh! Hvor bliver det dejligt at få noget at spise!«",
@@ -321,49 +320,49 @@
         ]
       },
       {
-        title: "Naturlig Udskillelse",
+        title: "3. Naturlig Udskillelse",
         instruction: "Fokusér på kroppens ubesværede rytme.",
         text: [
           "Da du har fordøjet din mad ordentligt, vil udskillelsesfunktionen være normal. Hver morgen, når du står op, vil du føle trang til at tømme tarmene, og uden medicin vil du opnå et normalt og tilfredsstillende resultat."
         ]
       },
       {
-        title: "Dyb Søvn & Vitalitet",
+        title: "4. Dyb Søvn & Vitalitet",
         instruction: "Mærk roen brede sig.",
         text: [
           "Hver nat, fra det øjeblik du ønsker at falde i søvn, til du ønsker at vågne, vil du sove dybt, roligt og fredfyldt uden mareridt. Når du vågner, vil du føle dig fuldstændig rask, opstemt og aktiv."
         ]
       },
       {
-        title: "Følelsesmæssig Balance & Humør",
+        title: "5. Følelsesmæssig Balance & Humør",
         instruction: "Slip bekymringerne.",
         text: [
           "Hvis du lejlighedsvis lider af nedtrykthed eller bekymring, vil du fra nu af holde op med det. I stedet vil du føle dig fuldstændig glad og opstemt – selv hvis du skulle have en reel grund til bekymring, vil du forblive rolig."
         ]
       },
       {
-        title: "Tålmodighed & Indre Ro",
+        title: "6. Tålmodighed & Indre Ro",
         instruction: "Du er herre over dig selv.",
         text: [
           "Du vil altid være tålmodig og herre over dig selv. De ting, der før bekymrede eller irriterede dig, vil fremover lade dig fuldstændig urørt og efterlade dig helt rolig."
         ]
       },
       {
-        title: "Tanker som Svinder Bort",
+        title: "7. Tanker som Svinder Bort",
         instruction: "Lad alt det usunde smelte bort.",
         text: [
           "Dårlige og usunde tanker, frygt eller nag vil gradvist smelte bort som i en fjern sky og til sidst forsvinde helt. Ligesom en drøm svinder bort, når vi vågner, således vil alle disse golde billeder forsvinde."
         ]
       },
       {
-        title: "Kroppens Organer & Helbredelse",
+        title: "8. Kroppens Organer & Helbredelse",
         instruction: "Harmoni i hele kroppen.",
         text: [
           "Alle dine organer udfører deres funktioner korrekt. Hjertet slår normalt, blodcirkulationen foregår som den skal, og lunger, mave og nyrer udfører deres opgaver perfekt. Enhver unormalitet forsvinder helt, og organerne genvinder deres naturlige funktion."
         ]
       },
       {
-        title: "Selvtillid & »Jeg Kan«",
+        title: "9. Selvtillid & »Jeg Kan«",
         instruction: "Troen på din indre kraft.",
         text: [
           "Enhver mistillid til dig selv vil forsvinde og give plads til selvtillid baseret på kraften i dit indre. Når du ønsker at gøre noget rimeligt, så tænk altid, at det er let. Glem ord som 'svært' eller 'umuligt'.",
@@ -371,7 +370,7 @@
         ]
       },
       {
-        title: "Afslutning & Opvågning",
+        title: "10. Afslutning & Opvågning",
         instruction: "Vend tilbage til nuet.",
         text: [
           "Nu tæller jeg til tre. Ved 'Tre' åbner du øjnene og træder ud af den passive tilstand. Du vil træde ud af den helt naturally uden at føle dig det mindste træt; tværtimod vil du føle dig stærk, aktiv og fuld af liv.",
@@ -379,7 +378,7 @@
         ]
       },
       {
-        title: "Din Daglige Huskeremse",
+        title: "11. Din Daglige Huskeremse",
         instruction: "En gave til dig selv fremover.",
         text: [
           "Fremover, for at understøtte den positive udvikling, skal du blot dagligt sige følgende ord til dig selv:",
@@ -438,18 +437,18 @@
 
     function renderLearnSteps() {
       const container = document.getElementById('steps-container');
-      container.innerHTML = learnSteps.map((step, idx) => `
+      container.innerHTML = scriptSections.map((step, idx) => `
         <div class="bg-slate-900 border border-slate-800/80 rounded-xl overflow-hidden transition-all">
           <button onclick="toggleStepDetail(${idx})" class="w-full p-4 text-left flex items-center justify-between gap-4 hover:bg-slate-800/40">
             <div class="flex items-center space-x-3">
-              <span class="font-mono text-xs font-bold text-teal-400 bg-teal-500/10 px-2 py-1 rounded border border-teal-500/20">${step.num}</span>
+              <span class="font-mono text-xs font-bold text-teal-400 bg-teal-500/10 px-2 py-1 rounded border border-teal-500/20">${idx + 1 < 10 ? '0' + (idx + 1) : idx + 1}</span>
               <span class="font-medium text-slate-100 text-sm md:text-base">${step.title}</span>
             </div>
             <svg id="arrow-${idx}" class="w-4 h-4 text-slate-400 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
           </button>
           <div id="detail-${idx}" class="hidden px-4 pb-4 pt-1 text-slate-300 text-xs md:text-sm border-t border-slate-800/40 space-y-2 bg-slate-950/40">
-            <p class="font-medium text-teal-200">${step.summary}</p>
-            <p class="text-slate-400 leading-relaxed">${step.detail}</p>
+            <p class="font-medium text-teal-200">${step.instruction}</p>
+            <p class="text-slate-400 leading-relaxed">${step.text.join(' ')}</p>
           </div>
         </div>
       `).join('');
@@ -509,10 +508,6 @@
       autoSyncSlides = !autoSyncSlides;
       document.getElementById('sync-btn-text').innerText = `Følg Lyd med Tekst: ${autoSyncSlides ? 'Til' : 'Fra'}`;
     }
-
-    // =================================================================
-    // INSTANT LOCAL FILE IMPORT (FROM IPHONE FILES APP / MAC)
-    // =================================================================
 
     async function handleManualWavUpload(event) {
       const files = event.target.files;
@@ -810,6 +805,12 @@
 
       const timeElem = document.getElementById('player-time-display');
       if (timeElem) timeElem.innerText = `${formatTime(clampedElapsed)} / ${formatTime(duration)}`;
+    }
+
+    function formatTime(secs) {
+      const m = Math.floor(secs / 60);
+      const s = Math.floor(secs % 60);
+      return `${m < 10 ? '0' : ''}${m}:${s < 10 ? '0' : ''}${s}`;
     }
 
     function updatePlayerUI() {
